@@ -9,16 +9,20 @@ const app = express();
 
 const corsOptions = {
   origin: function (origin, callback) {
+    console.log(' Request from origin:', origin);  
+    
     const allowedOrigins = [
       'http://localhost:5173',
       'http://localhost:3000',
-      'https://your-frontend.vercel.app', 
+      'http://localhost:5174',
       /\.vercel\.app$/,
       /\.netlify\.app$/
     ];
     
-
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      console.log(' No origin - allowing request');
+      return callback(null, true);
+    }
     
     const isAllowed = allowedOrigins.some(allowed => {
       if (allowed instanceof RegExp) {
@@ -28,25 +32,31 @@ const corsOptions = {
     });
     
     if (isAllowed) {
+      console.log(' Origin allowed:', origin);
       callback(null, true);
     } else {
+      console.log(' Origin blocked:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],  
+  allowedHeaders: ['Content-Type', 'Authorization']  
 };
 
 mongoose.connect(process.env.MONGO_URL)
   .then(() => {
-    console.log("✅ Connected to MongoDB");
+    console.log(" Connected to MongoDB");
   })
   .catch((err) => {
-    console.error("❌ MongoDB connection error:", err.message);
+    console.error(" MongoDB connection error:", err.message);
     process.exit(1);
   });
 
-app.use(cors(corsOptions)); 
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));  
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
