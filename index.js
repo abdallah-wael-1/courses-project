@@ -8,20 +8,43 @@ const httpStatus = require('./utils/httpStatus');
 const app = express();
 
 const corsOptions = {
-  origin: 'http://localhost:5173', 
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'https://your-frontend.vercel.app', 
+      /\.vercel\.app$/,
+      /\.netlify\.app$/
+    ];
+    
+
+    if (!origin) return callback(null, true);
+    
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return allowed === origin;
+    });
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200
 };
 
 mongoose.connect(process.env.MONGO_URL)
   .then(() => {
-    console.log(" Connected to MongoDB");
+    console.log("✅ Connected to MongoDB");
   })
   .catch((err) => {
-    console.error(" MongoDB connection error:", err.message);
+    console.error("❌ MongoDB connection error:", err.message);
     process.exit(1);
   });
-
 
 app.use(cors(corsOptions)); 
 app.use(express.json());
@@ -40,20 +63,36 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     message: 'Server is running',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
+app.get('/', (req, res) => {
+  res.json({
+    message: 'CoursesApp API',
+    status: 'running',
+    endpoints: {
+      health: '/api/health',
+      courses: '/api/courses',
+      users: '/api/users',
+      enrollments: '/api/enrollments'
+    }
+  });
+});
+
+// 404 handler
 app.use((req, res, next) => {
-  console.log('❌ 404 - Route not found:', req.method, req.originalUrl);
+  console.log(' 404 - Route not found:', req.method, req.originalUrl);
   return res.status(404).json({
     status: httpStatus.ERROR, 
     message: `Route ${req.originalUrl} not found`
   });
 });
 
+// Error handler
 app.use((error, req, res, next) => {
-  console.error('❌ Server Error:', error);
+  console.error(' Server Error:', error);
   res.status(error.statusCode || 500).json({
     status: error.statusText || httpStatus.ERROR, 
     message: error.message,
@@ -62,8 +101,11 @@ app.use((error, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => { 
   console.log(` Server is running on port ${PORT}`);
-  console.log(` API URL: http://localhost:${PORT}/api`);
-  console.log(` Uploads: http://localhost:${PORT}/uploads`);
+  console.log(` Environment: ${process.env.NODE_ENV || 'development'}`);
+  if (process.env.NODE_ENV === 'development') {
+    console.log(` API URL: http://localhost:${PORT}/api`);
+    console.log(` Uploads: http://localhost:${PORT}/uploads`);
+  }
 });
