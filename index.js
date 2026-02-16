@@ -54,10 +54,7 @@ mongoose.connect(process.env.MONGO_URL)
     process.exit(1);
   });
 
-app.use(cors({
-  origin: true,
-  credentials: true
-}));
+app.use(cors(corsOptions));
 
 
 app.use(express.json());
