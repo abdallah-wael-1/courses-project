@@ -55,7 +55,7 @@ mongoose.connect(process.env.MONGO_URL)
   });
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));  
+app.options('/*', cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); 
