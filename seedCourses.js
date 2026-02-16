@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
-const Course = require('../models/course.model');
+const Course = require('./models/course.model');
 
 const coursesData = [
   {
@@ -269,29 +269,28 @@ async function seedCourses() {
   try {
     // Connect to MongoDB
     await mongoose.connect(process.env.MONGO_URL);
-    console.log('✅ Connected to MongoDB');
+    console.log(' Connected to MongoDB');
 
     // Delete old courses
     await Course.deleteMany({});
-    console.log('🗑️  Cleaned old courses');
+    console.log('  Cleaned old courses');
 
     // Insert new courses
     const createdCourses = await Course.insertMany(coursesData);
-    console.log(`✅ Successfully created ${createdCourses.length} courses!`);
+    console.log(` Successfully created ${createdCourses.length} courses!`);
 
     // Print some data for verification
-    console.log('\n📚 First 5 courses:');
+    console.log('\n First 5 courses:');
     createdCourses.slice(0, 5).forEach((course, index) => {
       console.log(`${index + 1}. ${course.title} - $${course.price} - ${course.instructor}`);
     });
 
-    console.log('\n✅ Done! All courses are now in the database 🎉');
+    console.log('\n Done! All courses are now in the database 🎉');
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error occurred:', error.message);
+    console.error(' Error occurred:', error.message);
     process.exit(1);
   }
 }
 
-// Run the seed script
 seedCourses();

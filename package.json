@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "run-dev": "cross-env MY_NAME=abdallah nodemon index.js"
+  "run-dev": "concurrently \"node seedCourses.js\" \"nodemon index.js\""
   },
   "keywords": [],
   "author": "",
@@ -23,6 +23,7 @@
     "validator": "^13.15.26"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
     "nodemon": "^3.1.11"
   }
