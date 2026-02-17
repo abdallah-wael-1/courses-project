@@ -2,16 +2,12 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const mongoose = require('mongoose');
-const path = require('path');
-const fs = require('fs');
 const httpStatus = require('./utils/httpStatus');
 
 const app = express();
 
 const corsOptions = {
   origin: function (origin, callback) {
-    console.log(' Request from origin:', origin);  
-    
     const allowedOrigins = [
       'http://localhost:5173',
       'http://localhost:3000',
@@ -19,48 +15,31 @@ const corsOptions = {
       /\.vercel\.app$/,
       /\.netlify\.app$/
     ];
-    
-    if (!origin) {
-      console.log(' No origin - allowing request');
-      return callback(null, true);
-    }
-    
-    const isAllowed = allowedOrigins.some(allowed => {
-      if (allowed instanceof RegExp) {
-        return allowed.test(origin);
-      }
-      return allowed === origin;
-    });
-    
-    if (isAllowed) {
-      console.log(' Origin allowed:', origin);
-      callback(null, true);
-    } else {
-      console.log(' Origin blocked:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
+
+    if (!origin) return callback(null, true);
+
+    const isAllowed = allowedOrigins.some(allowed =>
+      allowed instanceof RegExp ? allowed.test(origin) : allowed === origin
+    );
+
+    isAllowed ? callback(null, true) : callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   optionsSuccessStatus: 200,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],  
-  allowedHeaders: ['Content-Type', 'Authorization']  
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 };
 
 mongoose.connect(process.env.MONGO_URL)
-  .then(() => {
-    console.log(" Connected to MongoDB");
-  })
+  .then(() => console.log("Connected to MongoDB"))
   .catch((err) => {
-    console.error(" MongoDB connection error:", err.message);
+    console.error("MongoDB connection error:", err.message);
     process.exit(1);
   });
 
 app.use(cors(corsOptions));
-
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true })); 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(express.json({ limit: '10mb' }));        // مهم عشان base64 بياخد حجم
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 const coursesRouter = require('./routes/courses.route');
 const usersRouter = require('./routes/users.route');
@@ -71,8 +50,8 @@ app.use('/api/users', usersRouter);
 app.use('/api/enrollments', enrollmentsRouter);
 
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'OK',
     message: 'Server is running',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development'
@@ -93,30 +72,23 @@ app.get('/', (req, res) => {
 });
 
 // 404 handler
-app.use((req, res, next) => {
-  console.log(' 404 - Route not found:', req.method, req.originalUrl);
+app.use((req, res) => {
   return res.status(404).json({
-    status: httpStatus.ERROR, 
+    status: httpStatus.ERROR,
     message: `Route ${req.originalUrl} not found`
   });
 });
 
 // Error handler
 app.use((error, req, res, next) => {
-  console.error(' Server Error:', error);
   res.status(error.statusCode || 500).json({
-    status: error.statusText || httpStatus.ERROR, 
+    status: error.statusText || httpStatus.ERROR,
     message: error.message,
     ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
   });
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => { 
-  console.log(` Server is running on port ${PORT}`);
-  console.log(` Environment: ${process.env.NODE_ENV || 'development'}`);
-  if (process.env.NODE_ENV === 'development') {
-    console.log(` API URL: http://localhost:${PORT}/api`);
-    console.log(` Uploads: http://localhost:${PORT}/uploads`);
-  }
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on port ${PORT}`);
 });
