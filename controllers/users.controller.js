@@ -56,8 +56,7 @@ const register = asyncWrapper(async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     //  Default avatar from Cloudinary
-    let avatarPath = 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg';
-    
+    let avatarPath = null;
     //  Use Cloudinary URL if file uploaded
     if (req.file) {
       avatarPath = req.file.path; 
