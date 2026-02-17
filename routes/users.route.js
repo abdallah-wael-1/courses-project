@@ -7,6 +7,11 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+const usersUploadDir = path.join(__dirname, '../uploads/users');
+if (!fs.existsSync(usersUploadDir)) {
+  fs.mkdirSync(usersUploadDir, { recursive: true });
+}
+
 const uploadsDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
@@ -14,7 +19,7 @@ if (!fs.existsSync(uploadsDir)) {
 
 const diskStorage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads');
+    cb(null, 'uploads/users');
   },
   filename: function (req, file, cb) {
     const ext = file.mimetype.split('/')[1];  

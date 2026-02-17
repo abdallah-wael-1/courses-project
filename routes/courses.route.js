@@ -7,6 +7,11 @@ const userRoles = require('../utils/userRoles');
 const multer = require('multer');
 const appError = require('../utils/appError');
 
+const coursesUploadDir = path.join(__dirname, '../uploads/courses');
+if (!fs.existsSync(coursesUploadDir)) {
+  fs.mkdirSync(coursesUploadDir, { recursive: true });
+}
+
 const diskStorage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, 'uploads/courses');

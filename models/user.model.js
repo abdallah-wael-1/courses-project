@@ -44,7 +44,7 @@ const userSchema = new mongoose.Schema(
     },
     avatar: {
       type: String,
-      default: 'uploads/default.png'
+       default: 'uploads/users/default.png'
     },
     phone: {
       type: String,

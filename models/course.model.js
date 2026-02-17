@@ -37,7 +37,7 @@ const courseSchema = new mongoose.Schema({
   },
   thumbnail: {
     type: String,
-    default: 'uploads/courses/default-course.jpg',
+    default: 'uploads/courses/default-course.jpg'
   },
   rating: {
     type: Number,
