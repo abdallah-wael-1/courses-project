@@ -4,33 +4,11 @@ const usersController = require('../controllers/users.controller');
 const verifyToken = require('../middlewares/verifyToken');
 const appError = require('../utils/appError');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { usersStorage } = require('../config/cloudinary');  
 
-const usersUploadDir = path.join(__dirname, '../uploads/users');
-if (!fs.existsSync(usersUploadDir)) {
-  fs.mkdirSync(usersUploadDir, { recursive: true });
-}
-
-const uploadsDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-const diskStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/users');
-  },
-  filename: function (req, file, cb) {
-    const ext = file.mimetype.split('/')[1];  
-    const fileName = `user-${Date.now()}.${ext}`;
-    cb(null, fileName);
-  }
-});
-
+// File filter for images only
 const fileFilter = (req, file, cb) => {
   const imageType = file.mimetype.split('/')[0];
-
   if (imageType === 'image') {
     return cb(null, true);
   } else {
@@ -38,14 +16,14 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
+// Configure multer with Cloudinary storage
 const upload = multer({
-  storage: diskStorage,
+  storage: usersStorage,  
   fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024
+    fileSize: 5 * 1024 * 1024  // 5MB
   }
 });
-
 
 // Get all users (Admin only)
 router.route('/')

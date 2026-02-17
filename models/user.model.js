@@ -44,7 +44,7 @@ const userSchema = new mongoose.Schema(
     },
     avatar: {
       type: String,
-       default: 'uploads/users/default.png'
+      default: 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg'  
     },
     phone: {
       type: String,

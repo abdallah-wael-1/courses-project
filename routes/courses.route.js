@@ -6,25 +6,9 @@ const allowedTo = require('../middlewares/allowedTo');
 const userRoles = require('../utils/userRoles');
 const multer = require('multer');
 const appError = require('../utils/appError');
-const fs = require('fs');
-const path = require('path');
+const { coursesStorage } = require('../config/cloudinary');  
 
-const coursesUploadDir = path.join(__dirname, '../uploads/courses');
-if (!fs.existsSync(coursesUploadDir)) {
-  fs.mkdirSync(coursesUploadDir, { recursive: true });
-}
-
-const diskStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/courses');
-  },
-  filename: function (req, file, cb) {
-    const ext = file.mimetype.split('/')[1];
-    const fileName = `course-${Date.now()}.${ext}`;
-    cb(null, fileName);
-  },
-});
-
+// File filter for images only
 const fileFilter = (req, file, cb) => {
   const imageType = file.mimetype.split('/')[0];
   if (imageType === 'image') {
@@ -34,10 +18,11 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
+//  Configure multer with Cloudinary storage
 const upload = multer({
-  storage: diskStorage,
+  storage: coursesStorage, 
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, 
+  limits: { fileSize: 5 * 1024 * 1024 }  // 5MB
 });
 
 router.route('/')
@@ -47,7 +32,7 @@ router.route('/')
     allowedTo(userRoles.MANAGER, userRoles.ADMIN),
     upload.single('thumbnail'),
     coursesController.createCourse
-  ); 
+  );
 
 router.route('/:courseId')
   .get(coursesController.getSingleCourse) 
@@ -61,6 +46,6 @@ router.route('/:courseId')
     verifyToken,
     allowedTo(userRoles.ADMIN, userRoles.MANAGER),
     coursesController.deleteCourse
-  ); 
+  );
 
 module.exports = router;

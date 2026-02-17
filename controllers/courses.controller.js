@@ -1,142 +1,207 @@
-const { validationResult } = require('express-validator');
 const Course = require('../models/course.model');
-const httpStatus = require('../utils/httpStatus');
 const asyncWrapper = require('../middlewares/async-wrapper');
-const appError = require('../utils/appError');
+const httpStatus = require('../utils/httpStatus');
 
+// Get all courses with pagination and filtering
 const getAllCourses = asyncWrapper(async (req, res) => {
   const { 
     page = 1, 
     limit = 12, 
-    category, 
-    level, 
-    minPrice, 
-    maxPrice,
-    search,
-    sort = '-createdAt' 
+    search = '', 
+    category = '', 
+    level = '',
+    sort = '-createdAt'
   } = req.query;
-console.log(req.query);
 
-  const skip = (page - 1) * limit;
+  const query = {};
 
-  const filter = {};
-
-  if (category) filter.category = category;
-  if (level) filter.level = level;
-  if (minPrice || maxPrice) {
-    filter.price = {};
-    if (minPrice) filter.price.$gte = Number(minPrice);
-    if (maxPrice) filter.price.$lte = Number(maxPrice);
-  }
+  // Search filter
   if (search) {
-    filter.$or = [
+    query.$or = [
       { title: { $regex: search, $options: 'i' } },
       { description: { $regex: search, $options: 'i' } },
-      { instructor: { $regex: search, $options: 'i' } },
+      { instructor: { $regex: search, $options: 'i' } }
     ];
   }
 
-  const [courses, total] = await Promise.all([
-    Course.find(filter, { __v: false })
-      .sort(sort)
-      .limit(Number(limit))
-      .skip(skip),
-    Course.countDocuments(filter),
-  ]);
+  // Category filter
+  if (category) {
+    query.category = category;
+  }
+
+  // Level filter
+  if (level) {
+    query.level = level;
+  }
+
+  const skip = (page - 1) * limit;
+
+  const courses = await Course.find(query)
+    .sort(sort)
+    .limit(parseInt(limit))
+    .skip(skip)
+    .select('-__v');
+
+  const total = await Course.countDocuments(query);
 
   res.json({
     status: httpStatus.SUCCESS,
     data: {
       courses,
       pagination: {
-        page: Number(page),
-        limit: Number(limit),
+        page: parseInt(page),
+        limit: parseInt(limit),
         total,
-        pages: Math.ceil(total / limit),
-      },
-    },
+        pages: Math.ceil(total / limit)
+      }
+    }
   });
 });
 
-// Get Single Course
-const getSingleCourse = asyncWrapper(async (req, res, next) => {
-  const course = await Course.findById(req.params.courseId);
+// Get single course by ID
+const getSingleCourse = asyncWrapper(async (req, res) => {
+  const { courseId } = req.params;
+
+  const course = await Course.findById(courseId).select('-__v');
 
   if (!course) {
-    const error = appError.create('Course not found', 404, httpStatus.FAIL);
-    return next(error);
+    return res.status(404).json({
+      status: httpStatus.ERROR,
+      message: "Course not found"
+    });
   }
 
-  res.json({ status: httpStatus.SUCCESS, data: course });
-});
-
-
-// Create Course
-const createCourse = asyncWrapper(async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    const error = appError.create(errors.array(), 400, httpStatus.FAIL);
-    return next(error);
-  }
-
-  const courseData = {
-    ...req.body,
-    createdBy: req.currentUser.id,
-  };
-
-  if (req.file) {
-    courseData.thumbnail = `uploads/courses/${req.file.filename}`;
-  }
-
-  const newCourse = new Course(courseData);
-  await newCourse.save();
-
-  res.status(201).json({ 
-    status: httpStatus.SUCCESS, 
-    data: newCourse 
+  res.json({
+    status: httpStatus.SUCCESS,
+    data: { course }
   });
 });
 
-// Update Course
-const updateCourse = asyncWrapper(async (req, res, next) => {
+// Create new course
+const createCourse = asyncWrapper(async (req, res) => {
+  try {
+    const { title, description, price, category, level, duration, instructor, tags } = req.body;
+
+    console.log(' Creating course:', {
+      title,
+      hasFile: !!req.file,
+      fileDetails: req.file ? {
+        filename: req.file.filename,
+        path: req.file.path,
+        size: req.file.size
+      } : null
+    });
+
+    if (!title || !description || !price || !duration || !instructor) {
+      return res.status(400).json({
+        status: httpStatus.FAIL,
+        message: "All required fields must be provided"
+      });
+    }
+
+    //  Default thumbnail from Unsplash
+    let thumbnailPath = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=675';
+    
+    if (req.file) {
+      thumbnailPath = req.file.path; 
+      console.log(' Thumbnail uploaded to Cloudinary:', thumbnailPath);
+    } else {
+      console.log(' No thumbnail uploaded, using default');
+    }
+
+    const newCourse = new Course({
+      title,
+      description,
+      price,
+      category: category || 'Other',
+      level: level || 'All Levels',
+      duration,
+      instructor,
+      thumbnail: thumbnailPath,
+      tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
+      createdBy: req.currentUser.id
+    });
+
+    await newCourse.save();
+
+    console.log(' Course created successfully:', {
+      id: newCourse._id,
+      title: newCourse.title,
+      thumbnail: newCourse.thumbnail
+    });
+
+    res.status(201).json({
+      status: httpStatus.SUCCESS,
+      data: { course: newCourse }
+    });
+  } catch (error) {
+    console.error(' Create course error:', error);
+    res.status(500).json({
+      status: httpStatus.ERROR,
+      message: error.message
+    });
+  }
+});
+
+// Update course
+const updateCourse = asyncWrapper(async (req, res) => {
   const courseId = req.params.courseId;
+  const updates = req.body;
 
-  const updateData = { ...req.body };
+  console.log(' Updating course:', courseId, {
+    hasFile: !!req.file,
+    updates: Object.keys(updates)
+  });
 
+  //  Use Cloudinary URL if new file uploaded
   if (req.file) {
-    updateData.thumbnail = `uploads/courses/${req.file.filename}`;
+    updates.thumbnail = req.file.path; 
+    console.log(' Thumbnail updated to Cloudinary:', updates.thumbnail);
   }
 
-  const updatedCourse = await Course.findByIdAndUpdate(
+  // Handle tags
+  if (updates.tags && typeof updates.tags === 'string') {
+    updates.tags = updates.tags.split(',').map(tag => tag.trim());
+  }
+
+  const course = await Course.findByIdAndUpdate(
     courseId,
-    { $set: updateData },
+    updates,
     { new: true, runValidators: true }
   );
 
-  if (!updatedCourse) {
-    const error = appError.create('Course not found', 404, httpStatus.FAIL);
-    return next(error);
+  if (!course) {
+    return res.status(404).json({
+      status: httpStatus.ERROR,
+      message: "Course not found"
+    });
   }
 
-  res.status(200).json({ 
-    status: httpStatus.SUCCESS, 
-    data: updatedCourse 
+  res.json({
+    status: httpStatus.SUCCESS,
+    data: { course }
   });
 });
 
-// Delete Course
-const deleteCourse = asyncWrapper(async (req, res, next) => {
-  const course = await Course.findByIdAndDelete(req.params.courseId);
+// Delete course
+const deleteCourse = asyncWrapper(async (req, res) => {
+  const courseId = req.params.courseId;
+
+  const course = await Course.findByIdAndDelete(courseId);
 
   if (!course) {
-    const error = appError.create('Course not found', 404, httpStatus.FAIL);
-    return next(error);
+    return res.status(404).json({
+      status: httpStatus.ERROR,
+      message: "Course not found"
+    });
   }
 
-  res.status(200).json({
+  console.log('⚠️ Course deleted:', course.title);
+
+  res.json({
     status: httpStatus.SUCCESS,
-    message: 'Course deleted successfully',
-    data: null,
+    message: "Course deleted successfully",
+    data: null
   });
 });
 
@@ -145,5 +210,5 @@ module.exports = {
   getSingleCourse,
   createCourse,
   updateCourse,
-  deleteCourse,
+  deleteCourse
 };

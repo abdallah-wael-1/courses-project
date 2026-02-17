@@ -21,8 +21,8 @@ const courseSchema = new mongoose.Schema({
     enum: ['Development', 'Design', 'Business', 'Marketing', 'IT & Software', 'Data Science', 'Other'],
     default: 'Other',
   },
-    level: {
-        type: String,
+  level: {
+    type: String,
     enum: ['Beginner', 'Intermediate', 'Advanced', 'All Levels'],
     default: 'All Levels',
   },
@@ -37,7 +37,7 @@ const courseSchema = new mongoose.Schema({
   },
   thumbnail: {
     type: String,
-    default: 'uploads/courses/default-course.jpg'
+    default: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=675'  
   },
   rating: {
     type: Number,
@@ -61,6 +61,8 @@ const courseSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   },
+}, {
+  timestamps: true  // ✅ أضف timestamps
 });
 
 module.exports = mongoose.model('Course', courseSchema);

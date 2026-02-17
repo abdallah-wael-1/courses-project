@@ -23,7 +23,7 @@ const register = asyncWrapper(async (req, res) => {
   try {
     const { firstName, lastName, email, password, role } = req.body;
 
-    console.log('📝 Registration attempt:', {
+    console.log(' Registration attempt:', {
       email,
       firstName,
       lastName,
@@ -42,6 +42,7 @@ const register = asyncWrapper(async (req, res) => {
         message: "All required fields must be provided"
       });
     }
+
     const oldUser = await User.findOne({ email: email });
 
     if (oldUser) {
@@ -54,12 +55,15 @@ const register = asyncWrapper(async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    let avatarPath = 'uploads/default.png';
+    //  Default avatar from Cloudinary
+    let avatarPath = 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg';
     
+    //  Use Cloudinary URL if file uploaded
     if (req.file) {
-      avatarPath = `uploads/${req.file.filename}`;
+      avatarPath = req.file.path; 
+      console.log(' Avatar uploaded to Cloudinary:', avatarPath);
     } else {
-      console.log('ℹ No avatar uploaded, using default');
+      console.log(' No avatar uploaded, using default');
     }
 
     // Create new user
@@ -103,7 +107,7 @@ const register = asyncWrapper(async (req, res) => {
       data: userResponse
     });
   } catch (error) {
-    console.error('❌ Registration error:', error);
+    console.error(' Registration error:', error);
     res.status(500).json({
       status: httpStatus.ERROR,
       message: error.message
@@ -210,12 +214,13 @@ const updateProfile = asyncWrapper(async (req, res) => {
     }
   });
 
+  //  Handle avatar removal with Cloudinary default
   if (req.body.removeAvatar === 'true') {
-    filteredUpdates.avatar = 'uploads/default.png';
+    filteredUpdates.avatar = 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg';
     console.log('🗑️ Avatar removed, using default');
   } 
   else if (req.file) {
-    filteredUpdates.avatar = `uploads/${req.file.filename}`;
+    filteredUpdates.avatar = req.file.path; // Cloudinary URL
     console.log('✅ Avatar updated:', filteredUpdates.avatar);
   }
 
@@ -233,7 +238,6 @@ const updateProfile = asyncWrapper(async (req, res) => {
     });
   }
 
-  console.log(' Profile updated for user:', user.email);
 
   res.json({
     status: httpStatus.SUCCESS,
@@ -284,7 +288,7 @@ const updatePassword = asyncWrapper(async (req, res) => {
   user.password = hashedPassword;
   await user.save();
 
-  console.log('✅ Password updated for user:', user.email);
+  console.log(' Password updated for user:', user.email);
 
   res.json({
     status: httpStatus.SUCCESS,
@@ -315,7 +319,6 @@ const deleteAccount = asyncWrapper(async (req, res) => {
 const getDashboard = asyncWrapper(async (req, res) => {
   const userId = req.currentUser.id || req.currentUser._id;
 
-  console.log('📊 Fetching dashboard for user:', userId);
 
   const enrollments = await Enrollment.find({ user: userId })
     .populate({
@@ -323,7 +326,6 @@ const getDashboard = asyncWrapper(async (req, res) => {
       select: 'title thumbnail instructor rating category duration level price studentsCount'
     })
     .sort({ lastAccessed: -1 });
-
 
   const totalEnrolled = enrollments.length;
   const completed = enrollments.filter(e => e.status === 'completed').length;
@@ -373,7 +375,7 @@ const getDashboard = asyncWrapper(async (req, res) => {
     id: e._id,
     courseId: e.course?._id,
     title: e.course?.title || 'Course Not Found',
-    thumbnail: e.course?.thumbnail || 'uploads/courses/default-course.jpg',
+    thumbnail: e.course?.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400',
     instructor: e.course?.instructor || 'Unknown',
     rating: e.course?.rating || 0,
     category: e.course?.category || 'Other',
