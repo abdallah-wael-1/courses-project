@@ -42,10 +42,6 @@ const userSchema = new mongoose.Schema(
       default: 'USER',
       uppercase: true
     },
-    avatar: {
-      type: String,
-  
-    },
     phone: {
       type: String,
       trim: true
@@ -104,7 +100,6 @@ userSchema.methods.getPublicProfile = function () {
     lastName: this.lastName,
     email: this.email,
     role: this.role,
-    avatar: this.avatar,
     bio: this.bio,
     location: this.location,
     occupation: this.occupation,

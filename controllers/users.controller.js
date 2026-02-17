@@ -19,9 +19,9 @@ const getAllUsers = asyncWrapper(async (req, res) => {
   res.json({ status: httpStatus.SUCCESS, data: users });
 });
 
-// Register - يقبل avatar كـ string (URL أو base64) في req.body
+
 const register = asyncWrapper(async (req, res) => {
-  const { firstName, lastName, email, password, role, avatar } = req.body;
+  const { firstName, lastName, email, password, role } = req.body;
 
   if (!firstName || !lastName || !email || !password) {
     return res.status(400).json({
@@ -46,7 +46,7 @@ const register = asyncWrapper(async (req, res) => {
     email,
     password: hashedPassword,
     role: role || 'USER',
-    avatar: avatar || null   // string مباشر من الفرونت
+    avatar: avatar || null   
   });
 
   const token = await generateJWT({
@@ -66,7 +66,6 @@ const register = asyncWrapper(async (req, res) => {
       lastName: newUser.lastName,
       email: newUser.email,
       role: newUser.role,
-      avatar: newUser.avatar,
       token
     }
   });
@@ -138,14 +137,13 @@ const getProfile = asyncWrapper(async (req, res) => {
   res.json({ status: httpStatus.SUCCESS, data: user });
 });
 
-// Update profile - يقبل avatar كـ string في req.body
 const updateProfile = asyncWrapper(async (req, res) => {
   const userId = req.currentUser.id;
   const updates = req.body;
 
   const allowedUpdates = [
     'firstName', 'lastName', 'phone', 'bio',
-    'location', 'dateOfBirth', 'occupation', 'education', 'avatar'
+    'location', 'dateOfBirth', 'occupation', 'education', 
   ];
 
   const filteredUpdates = {};
@@ -154,11 +152,6 @@ const updateProfile = asyncWrapper(async (req, res) => {
       filteredUpdates[key] = updates[key];
     }
   });
-
-  // لو الفرونت بعت removeAvatar اشل الصورة
-  if (updates.removeAvatar === 'true' || updates.removeAvatar === true) {
-    filteredUpdates.avatar = null;
-  }
 
   const user = await User.findByIdAndUpdate(
     userId,
