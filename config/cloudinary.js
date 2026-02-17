@@ -1,53 +1,36 @@
-const cloudinary = require('cloudinary').v2;
+const { v2: cloudinary } = require('cloudinary');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const multer = require('multer');
 
-
-const CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || '';
-const API_KEY = process.env.CLOUDINARY_API_KEY || '';
-const API_SECRET = process.env.CLOUDINARY_API_SECRET || '';
-
-console.log('🔧 Cloudinary Config Check:', {
-  cloud_name: CLOUD_NAME ? ' Set' : ' Missing',
-  api_key: API_KEY ? ' Set' : ' Missing',
-  api_secret: API_SECRET ? ' Set' : ' Missing'
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Configure only if all variables exist
-if (CLOUD_NAME && API_KEY && API_SECRET) {
-  cloudinary.config({
-    cloud_name: CLOUD_NAME,
-    api_key: API_KEY,
-    api_secret: API_SECRET
-  });
-
-  console.log(' Cloudinary configured successfully');
-} else {
-  console.warn(' Cloudinary not configured - missing environment variables');
-}
-
-// Create storages (will work only if configured)
-const usersStorage = CLOUD_NAME ? new CloudinaryStorage({
+const usersStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: 'coursesapp/users',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
-    transformation: [{ width: 500, height: 500, crop: 'limit', quality: 'auto' }],
-    public_id: (req, file) => `user-${Date.now()}`
+  params: (req, file) => {
+    return {
+      folder: 'coursesapp/users',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+      public_id: `user-${Date.now()}`
+    };
   }
-}) : null;
+});
 
-const coursesStorage = CLOUD_NAME ? new CloudinaryStorage({
+const coursesStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: 'coursesapp/courses',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    transformation: [{ width: 1200, height: 675, crop: 'limit', quality: 'auto' }],
-    public_id: (req, file) => `course-${Date.now()}`
+  params: (req, file) => {
+    return {
+      folder: 'coursesapp/courses',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+      public_id: `course-${Date.now()}`
+    };
   }
-}) : null;
+});
 
-module.exports = { 
-  cloudinary, 
-  usersStorage, 
-  coursesStorage 
-};
+const uploadUser = multer({ storage: usersStorage });
+const uploadCourse = multer({ storage: coursesStorage });
+
+module.exports = { cloudinary, uploadUser, uploadCourse };
