@@ -6,6 +6,7 @@ const allowedTo = require('../middlewares/allowedTo');
 const userRoles = require('../utils/userRoles');
 const multer = require('multer');
 const appError = require('../utils/appError');
+const fs = require('fs');
 
 const coursesUploadDir = path.join(__dirname, '../uploads/courses');
 if (!fs.existsSync(coursesUploadDir)) {
