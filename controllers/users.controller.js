@@ -143,7 +143,7 @@ const updateProfile = asyncWrapper(async (req, res) => {
 
   const allowedUpdates = [
     'firstName', 'lastName', 'phone', 'bio',
-    'location', 'dateOfBirth', 'occupation', 'education', 
+    'location', 'dateOfBirth', 'occupation', 'education', 'avatar'
   ];
 
   const filteredUpdates = {};
