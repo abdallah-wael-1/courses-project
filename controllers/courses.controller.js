@@ -69,7 +69,6 @@ const getSingleCourse = asyncWrapper(async (req, res) => {
   });
 });
 
-// Create new course - يقبل thumbnail كـ string (URL أو base64) في req.body
 const createCourse = asyncWrapper(async (req, res) => {
   const { title, description, price, category, level, duration, instructor, tags } = req.body;
 
@@ -101,15 +100,11 @@ const createCourse = asyncWrapper(async (req, res) => {
   });
 });
 
-// Update course - يقبل thumbnail كـ string في req.body
 const updateCourse = asyncWrapper(async (req, res) => {
   const courseId = req.params.courseId;
   const updates = req.body;
-
-  // Remove thumbnail if provided - images handled by frontend only
   if ('thumbnail' in updates) delete updates.thumbnail;
 
-  // Handle tags if sent as string
   if (updates.tags && typeof updates.tags === 'string') {
     updates.tags = updates.tags.split(',').map(tag => tag.trim());
   }

@@ -6,8 +6,6 @@ exports.enrollInCourse = asyncWrapper(async (req, res) => {
   const { courseId } = req.body;
   const userId = req.currentUser.id || req.currentUser._id;
 
-  console.log('📌 Enrolling user:', userId, 'in course:', courseId);
-
   const course = await Course.findById(courseId);
   if (!course) {
     return res.status(404).json({
@@ -37,7 +35,6 @@ exports.enrollInCourse = asyncWrapper(async (req, res) => {
     $inc: { studentsCount: 1 }
   });
 
-  console.log('✅ Enrollment successful!');
 
   res.status(201).json({
     success: true,
@@ -98,9 +95,6 @@ exports.updateCourseProgress = asyncWrapper(async (req, res) => {
   const { progress, completedLessons } = req.body;
   const userId = req.currentUser.id || req.currentUser._id;
 
-  console.log('📝 Updating progress for course:', courseId, 'user:', userId);
-  console.log('📊 New progress:', { progress, completedLessons });
-
   const enrollment = await Enrollment.findOne({
     user: userId,
     course: courseId
@@ -125,11 +119,6 @@ exports.updateCourseProgress = asyncWrapper(async (req, res) => {
   enrollment.status = enrollment.progress >= 100 ? 'completed' : 'active';
 
   await enrollment.save();
-
-  console.log('✅ Progress updated successfully:', {
-    progress: enrollment.progress,
-    status: enrollment.status
-  });
 
   res.status(200).json({
     success: true,

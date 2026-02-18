@@ -11,7 +11,7 @@ router.route('/')
   .post(
     verifyToken,
     allowedTo(userRoles.MANAGER, userRoles.ADMIN),
-    coursesController.createCourse   // يقبل JSON مباشر بدون multer
+    coursesController.createCourse   
   );
 
 // Single course
@@ -20,7 +20,7 @@ router.route('/:courseId')
   .patch(
     verifyToken,
     allowedTo(userRoles.MANAGER, userRoles.ADMIN),
-    coursesController.updateCourse   // يقبل JSON مباشر بدون multer
+    coursesController.updateCourse   
   )
   .delete(
     verifyToken,
