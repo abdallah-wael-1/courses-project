@@ -46,7 +46,6 @@ const register = asyncWrapper(async (req, res) => {
     email,
     password: hashedPassword,
     role: role || 'USER',
-    avatar: avatar || null   
   });
 
   const token = await generateJWT({
@@ -69,7 +68,9 @@ const register = asyncWrapper(async (req, res) => {
       token
     }
   });
+
 });
+
 
 const login = asyncWrapper(async (req, res) => {
   const { email, password } = req.body;
@@ -111,7 +112,6 @@ const login = asyncWrapper(async (req, res) => {
       lastName: user.lastName,
       email: user.email,
       role: user.role,
-      avatar: user.avatar,
       phone: user.phone,
       bio: user.bio,
       location: user.location,
@@ -143,7 +143,7 @@ const updateProfile = asyncWrapper(async (req, res) => {
 
   const allowedUpdates = [
     'firstName', 'lastName', 'phone', 'bio',
-    'location', 'dateOfBirth', 'occupation', 'education', 'avatar'
+    'location', 'dateOfBirth', 'occupation', 'education'
   ];
 
   const filteredUpdates = {};

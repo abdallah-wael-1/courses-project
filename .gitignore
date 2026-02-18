@@ -20,9 +20,6 @@ Thumbs.db
 .idea/
 
 
-uploads/*
-!uploads/.gitkeep
-
 # Build files
 dist/
 build/

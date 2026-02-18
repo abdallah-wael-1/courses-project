@@ -71,7 +71,7 @@ const getSingleCourse = asyncWrapper(async (req, res) => {
 
 // Create new course - يقبل thumbnail كـ string (URL أو base64) في req.body
 const createCourse = asyncWrapper(async (req, res) => {
-  const { title, description, price, category, level, duration, instructor, tags, thumbnail } = req.body;
+  const { title, description, price, category, level, duration, instructor, tags } = req.body;
 
   if (!title || !description || !price || !duration || !instructor) {
     return res.status(400).json({
@@ -88,7 +88,7 @@ const createCourse = asyncWrapper(async (req, res) => {
     level: level || 'All Levels',
     duration,
     instructor,
-    thumbnail: thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=675',
+    thumbnail: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=675',
     tags: tags ? (Array.isArray(tags) ? tags : tags.split(',').map(t => t.trim())) : [],
     createdBy: req.currentUser.id
   });
@@ -105,6 +105,9 @@ const createCourse = asyncWrapper(async (req, res) => {
 const updateCourse = asyncWrapper(async (req, res) => {
   const courseId = req.params.courseId;
   const updates = req.body;
+
+  // Remove thumbnail if provided - images handled by frontend only
+  if ('thumbnail' in updates) delete updates.thumbnail;
 
   // Handle tags if sent as string
   if (updates.tags && typeof updates.tags === 'string') {
